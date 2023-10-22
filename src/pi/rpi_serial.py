@@ -1,5 +1,4 @@
 import serial
-import time
 import json
 import socket
 
@@ -10,11 +9,16 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((rpi_ip, rpi_port))
 
 
-arduino = serial.Serial(port='/dev/ttyS0',   baudrate=38400, timeout=0.01)
+# higher baudrate causes data to be corrupted
+arduino = serial.Serial(port='/dev/ttyS0', baudrate=38400, timeout=0.01)
 
 
 class ControllerData:
-    def __init__(self, hats=(0, 0), left_joystick=(0, 0), right_joystick=(0, 0), thrust_left=0, thrust_right=0, buttons=(i for i in range(13))) -> None:
+    """
+    Stores state of a controller and provides a way to check if two controller states are the same
+    """
+    def __init__(self, hats=(0, 0), left_joystick=(0, 0), right_joystick=(0, 0), 
+                 thrust_left=0, thrust_right=0, buttons=(i for i in range(13))) -> None:
         self.hats = tuple(hats)
         self.left_joystick = tuple(left_joystick)
         self.right_joystick = tuple(right_joystick)
@@ -73,26 +77,25 @@ class ControllerData:
 
 
 def write_read(x):
-    arduino.write(bytes(x,   'utf-8'))
+    arduino.write(bytes(x, 'utf-8'))
     return data
 
 old_data = ControllerData()
 try:
     while True:
-        data, addr = sock.recvfrom(1024)  # ﺩﺭیﺎﻔﺗ ﺩﺍﺪﻫ
+        data, addr = sock.recvfrom(1024)  # data received from host device
         data = data.decode()
         controller_data = ControllerData.fromjsonstring(data)
-        # print(data)
-        # print(json_data)
+        
+        # it doesn't send duplicate controller states to arduino
         if controller_data != old_data:
+            # we terminate each string with \n in arduino
             cj = controller_data.tojson() + '\n'
             print(cj)
             callback = write_read(cj)
             old_data = controller_data
             if not callback:
                 continue
-
-            print(callback)
 
 except KeyboardInterrupt:
     sock.close()

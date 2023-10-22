@@ -2,29 +2,8 @@
 #include <ArduinoJson.h>
 #include <Servo.h>
 
-class Motor{
-    public:
-        Servo servo;
-        int pin;
-        int power;
-        int base_power = 1500;
-        void attach(int n){
-            servo.attach(n);
-            pin = n;
+#include <motor.h>
 
-        }
-
-        void setServo(Servo srv){
-            servo = srv;
-        }
-
-        void setPower(int n){
-            power = base_power + n;
-            Serial.println("power: "+power);
-            
-            servo.write(power);
-        }
-};
 
 Motor thrustRight;
 Motor thrustLeft;
@@ -41,7 +20,7 @@ float pi = 3.14159265359;
 
 const int tilt_power = 200;
 const int base = 1500;
-boolean titled = false;
+boolean tilted = false;
 boolean lifted = false;
 boolean rotated = false;
 
@@ -148,11 +127,14 @@ void resetMotors(){
     liftRight1.setPower(0);
     lifted = false;
     rotated = false;
-    titled = false;
+    tilted = false;
 }
 
 void tilt(float x, float y){
-    titled = true;
+    tilted = true;
+    y = -y; // it comes reversed from right joystick so we flip it
+    
+    // tilt to right, left, up and down respectively
     if(x > 0.9){
         liftRight0.setPower(tilt_power);
         liftRight1.setPower(tilt_power);
@@ -170,17 +152,21 @@ void tilt(float x, float y){
         liftRight0.setPower(-tilt_power);
         return;
     }
-    y = -y;
+
     float theta;
-    if(x>0.2){
+    if(x>0.1){
         theta = atan(y/x) - pi/2;
     }else{
         theta = pi / 2;
     }
-    float coef = sqrt(pow(x, 2)+pow(y, 2));
-    coef = max(coef, 1);
-    Serial.println(tilt_power*cos(theta)*coef);
+
+    // using math formula to calculate value of each motor
+    float coef = sqrt(pow(x, 2)+pow(y, 2));  // pythagorean formula to calculate how much to tilt it
+    coef = max(coef, 1); // safety measure
+
+    // calculate cos(theta-pi/2) for right motor
     liftRight0.setPower((int) tilt_power*cos(theta)*coef);
+    // calculate sin(theta-pi/2) for left motor
     liftLeft0.setPower((int) tilt_power*sin(theta)*coef);
 
 }
@@ -188,21 +174,27 @@ void tilt(float x, float y){
 void operateServo(){
   if (newData == true){
     newData = false;
+
+    // deseralize json data to DJD
     DynamicJsonDocument doc(2048);
     Serial.println(receivedChars);
     deserializeJson(doc, receivedChars);
-    String d = doc["left_joystick"];
+
     double lj_y = doc["left_joystick"][1];
 
+    // ascending and descending
     if(doc["hats"][1] == 1){
-        liftUp();
+        liftUp();  // ascend
     }else if(doc["hats"][1] == -1){
-        liftDown();
+        liftDown(); // descend
     }else if(lifted){
-        resetMotors();
+        resetMotors();  // reset back to default
     }
-    // boolean buttons[13] = doc["buttons"];
+    
+
+    // rotation with L1 and R1
     if(doc["buttons"][4] or doc["buttons"][5]){
+        // buttons[4] -> L1, buttons[5] -> R1
         rotate(doc["buttons"][4]);
         return;
     } else if(rotated){
@@ -212,11 +204,14 @@ void operateServo(){
     float rj_x = doc["right_joystick"][0];
     float rj_y = doc["right_joystick"][1];
 
+    // tilt with right joystick
     if((rj_x>0.3) || (rj_y>0.3) || (rj_x < -0.3) || (rj_y < -0.3)){
         tilt(rj_x, rj_y);
         return;
     } // tilt will be checked below
 
+    
+    // tilt with x/o/+/■
     if(doc["buttons"][0]){
         tilt(0.5, 1);  // it's reversed
         return;
@@ -229,19 +224,16 @@ void operateServo(){
     } else if(doc["buttons"][3]){
         tilt(-1, 0.5);
         return;
-    } else if(titled){
+    } else if(tilted){
         resetMotors();
     }
 
-
-
-
-    float thrust_left = doc["right_joystick"][1];
+    // junk that might come in handy
     int escValue = map(lj_y*-100, -100, 100, 1000, 2000);
-    // servo.write(escValue);
     thrustLeft.setPower(escValue);
     thrustRight.setPower(escValue);
     Serial.println(escValue);
+
   }
 }
 void loop() {
