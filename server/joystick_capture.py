@@ -20,7 +20,7 @@ controller.init()
 
 def pretty(i):
     data = controller.get_axis(i)
-    return float(f'{data:.2f}')
+    return float(f'{data:.3f}')
 
 try:
     while True:
@@ -35,7 +35,7 @@ try:
                 # خواندن مقادیر دکمه‌ها و آنالوگ‌ها
                 data = {
                     "buttons": [controller.get_button(i) for i in range(controller.get_numbuttons())],
-                    #"hats": [controller.get_hat(i) for i in range(controller.get_numhats())],
+                    "hats": controller.get_hat(0),
                     "left_joystick": (pretty(0), pretty(1)),
                     "right_joystick":(pretty(3), pretty(4)),
                     "thrust_left": pretty(2), # -1 to 1
