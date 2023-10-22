@@ -10,30 +10,32 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.bind((rpi_ip, rpi_port))
 
 
-arduino = serial.Serial(port='/dev/ttyACM1',   baudrate=9600, timeout=0.01)
+arduino = serial.Serial(port='/dev/ttyS0',   baudrate=38400, timeout=0.01)
 
 
 class ControllerData:
-    def __init__(self, left_joystick=(0, 0), right_joystick=(0, 0), thrust_left=0, thrust_right=0, buttons=[i for i in range(13)]) -> None:
-        self.left_joystick = left_joystick
-        self.right_joystick = right_joystick
+    def __init__(self, hats=(0, 0), left_joystick=(0, 0), right_joystick=(0, 0), thrust_left=0, thrust_right=0, buttons=(i for i in range(13))) -> None:
+        self.hats = tuple(hats)
+        self.left_joystick = tuple(left_joystick)
+        self.right_joystick = tuple(right_joystick)
 
         self.thrust_left = thrust_left
         self.thrust_right = thrust_right
 
-        self.buttons = buttons
+        self.buttons = tuple(buttons)
 
     @classmethod
     def fromjsonstring(cls, string: str):
         js = json.loads(string)
 
-        return cls(js['left_joystick'], js['right_joystick'], js['thrust_left'], js['thrust_right'], js['buttons'])
+        return cls(js['hats'], js['left_joystick'], js['right_joystick'], js['thrust_left'], js['thrust_right'], js['buttons'])
 
     def __str__(self) -> str:
-         return (f'{self.left_joystick=}{self.right_joystick=}{self.thrust_right=}{self.thrust_left=}{self.buttons=}')
+         return (f'{self.hats=}{self.left_joystick=}{self.right_joystick=}{self.thrust_right=}{self.thrust_left=}{self.buttons=}')
 
     def tojson(self):
          return json.dumps({
+             'hats': self.hats,
              'left_joystick': self.left_joystick,
              'right_joystick': self.right_joystick,
              'thrust_left': self.thrust_left,
@@ -41,23 +43,26 @@ class ControllerData:
              'buttons': self.buttons})
 
     def __eq__(self, other):
-        threshold = 0.2
-        if abs(self.left_joystick[0] - other.left_joystick[0]) < threshold:
+        threshold = 0.08
+        if abs(self.left_joystick[0] - other.left_joystick[0]) > threshold:
             return False
 
-        if abs(self.left_joystick[1] - other.left_joystick[1]) < threshold:
+        if abs(self.left_joystick[1] - other.left_joystick[1]) > threshold:
             return False
 
-        if abs(self.right_joystick[1] - other.right_joystick[1]) < threshold:
+        if abs(self.right_joystick[1] - other.right_joystick[1]) > threshold:
             return False
 
-        if abs(self.right_joystick[0] - other.right_joystick[0]) < threshold:
+        if abs(self.right_joystick[0] - other.right_joystick[0]) > threshold:
             return False
 
-        if abs(self.thrust_left - other.thrust_left) < threshold:
+        if abs(self.thrust_left - other.thrust_left) > threshold:
             return False
 
-        if abs(self.thrust_right - other.thrust_right) < threshold:
+        if abs(self.thrust_right - other.thrust_right) > threshold:
+            return False
+
+        if self.hats != other.hats:
             return False
 
         for i in range(len(self.buttons)):
@@ -69,8 +74,6 @@ class ControllerData:
 
 def write_read(x):
     arduino.write(bytes(x,   'utf-8'))
-    time.sleep(0.05)
-    data = arduino.readline()
     return data
 
 old_data = ControllerData()
@@ -79,17 +82,17 @@ try:
         data, addr = sock.recvfrom(1024)  # ﺩﺭیﺎﻔﺗ ﺩﺍﺪﻫ
         data = data.decode()
         controller_data = ControllerData.fromjsonstring(data)
-        json_data = json.loads(data)
         # print(data)
         # print(json_data)
         if controller_data != old_data:
-            print(controller_data)
-            callback = write_read(controller_data.tojson())
-            print(callback)
+            cj = controller_data.tojson() + '\n'
+            print(cj)
+            callback = write_read(cj)
             old_data = controller_data
+            if not callback:
+                continue
 
-        # ﺩﺭ ﺍیﻦﺟﺍ ﻡی<200c>ﺕﻭﺎﻧیﺩ ﺩﺍﺪﻫ<200c>ﻫﺍی ﺩﺭیﺎﻔﺗی ﺭﺍ پﺭﺩﺍﺰﺷ کﻥیﺩ
-        #print(f"Received data: {data}")
+            print(callback)
+
 except KeyboardInterrupt:
     sock.close()
-
