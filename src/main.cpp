@@ -52,10 +52,7 @@ void setup()
     liftRight1.setServo(srv5);
     liftRight1.attach(23);
 
-    Serial.begin(9600);
-
-    Serial1.begin(38400);
-    Serial.println("init");
+    Serial.begin(38400);
 }
 
 const int numChars = 1024;
@@ -63,12 +60,6 @@ char receivedChars[numChars]; // an array to store the received data
 
 boolean newData = false;
 
-void log(String str)
-{
-    Serial.print(str);
-    Serial.print('\t');
-    Serial.println(receivedChars);
-}
 
 void recvWithEndMarker()
 {
@@ -76,9 +67,9 @@ void recvWithEndMarker()
     char endMarker = '\n';
     char rc;
 
-    while (Serial1.available() > 0 && newData == false)
+    while (Serial.available() > 0 && newData == false)
     {
-        rc = Serial1.read();
+        rc = Serial.read();
 
         if (rc != endMarker)
         {
@@ -100,15 +91,6 @@ void recvWithEndMarker()
     }
 }
 
-void showNewData()
-{
-    if (newData == true)
-    {
-        Serial.print("This just in ... ");
-        Serial.println(receivedChars);
-        newData = false;
-    }
-}
 
 void rotate(boolean left)
 {
@@ -211,7 +193,6 @@ boolean operateServo()
 
         // deseralize json data to DJD
         DynamicJsonDocument doc(2048);
-        Serial.println(receivedChars);
         deserializeJson(doc, receivedChars);
 
         double lj_y = doc["left_joystick"][1];
@@ -282,7 +263,6 @@ boolean operateServo()
         int escValue = map(lj_y * -100, -100, 100, 1000, 2000);
         thrustLeft.setPower(escValue);
         thrustRight.setPower(escValue);
-        Serial.println(escValue);
 
         // DynamicJsonDocument *sensorData;
         // sensorData = GY85.toJson();
@@ -295,14 +275,14 @@ void loop()
 {
     recvWithEndMarker();
     boolean op = operateServo();
-    // if (!receiving)
-    // {
-    //     DynamicJsonDocument *sensorData;
-    //     sensorData = GY85.toJson();
-    //     String output;
-    //     serializeJson(*sensorData, output);
-    //     // Serial1.println("hello");
-    //     Serial.println(output);
-    //     delay(200);
-    // }
+    delay(50);
+    if (!receiving)
+    {
+        DynamicJsonDocument *sensorData;
+        sensorData = GY85.toJson();
+        String output;
+        serializeJson(*sensorData, output);
+        Serial.println(output);
+        delay(100);
+    }
 }
