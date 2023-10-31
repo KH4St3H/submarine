@@ -45,11 +45,19 @@ class MonitorFrame(tk.Frame):
         self._create_angle()
     
     def update_angle(self, x=None, y=None):
+        print(x, y)
         if x:
-            self.angle_x.set(x)
+            self.angle_x.set(int(x))
         if y:
-            self.angle_y.set(y)
+            self.angle_y.set(int(y))
 
+    def update_speed(self, x=None, y=None, z=None):
+        if x:
+            self._speed_x.set(x)
+        if y:
+            self._speed_y.set(y)
+        if z:
+            self._speed_z.set(z)
 
     def _create_angle(self):
         self.angle_x = tk.IntVar()
@@ -94,15 +102,13 @@ class MonitorFrame(tk.Frame):
         separator.grid(row=1, column=0, columnspan=3,sticky='ew')
 
         self.compass = CompassFrame(self.root, self.headvar)
-        update_button = tk.Button(self, text="Update Heading", command=self.uc)
-        update_button.grid(row=7, column=0)
+        #update_button = tk.Button(self, text="Update Heading", command=self.uc)
+        #update_button.grid(row=7, column=0)
 
-    def uc(self):
-        self._heading += 10
-        self._heading = self._heading % 360
+    def update_compass(self, angle):
+        self._heading = angle % 360
         self.headvar.set(self._heading)
         self.compass.angle = self._heading
-        self.update_angle(10, 15)
 
 if __name__=='__main__':
     root = tk.Tk()
