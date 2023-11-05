@@ -1,6 +1,9 @@
 #include "GY_85.h"
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include<compass.h>
+
+Compass compass;
 
 
 DynamicJsonDocument doc(1024);
@@ -11,27 +14,19 @@ DynamicJsonDocument* GY_85::toJson(){
   int ay = accelerometer_y(accelerometerReadings);
   int az = accelerometer_z(accelerometerReadings);
 
-  int *compassReadings = readFromCompass();
-  int cx = compass_x(compassReadings);
-  int cy = compass_y(compassReadings);
-  int cz = compass_z(compassReadings);
-
-  float heading = atan2(cy / 0.92, cx / 0.92);
-
   // http://www.magnetic-declination.com/
-  float declinationAngle = 0.09;
-  heading += declinationAngle;
-
-  while (heading < 0)
-    heading += 2 * PI;
-
-  while (heading > 2 * PI)
-    heading -= 2 * PI;
 
   float *gyroReadings = readGyro();
   float gx = gyro_x(gyroReadings);
   float gy = gyro_y(gyroReadings);
   float gz = gyro_z(gyroReadings);
+  if(gx<1)
+    gx = 0;
+  if(gy<1)
+    gy = 0;
+  if(gz<1)
+    gz = 0;
+
   float gt = temp(gyroReadings);
 
   doc["gyro"][0] = gx;
@@ -41,7 +36,8 @@ DynamicJsonDocument* GY_85::toJson(){
   doc["accel"][0] = ax;
   doc["accel"][1] = ay;
 
-  doc["compassHeading"] = (int) heading * 180 / PI;
+  compass.read();
+  doc["compassHeading"] = compass.getAzimuth();
 
   doc["temperature"] = gt;
 
@@ -108,6 +104,13 @@ void GY_85::SetCompass()
     Wire.write( 0x02 );                     //select mode register
     Wire.write( 0x00 );                     //continuous measurement mode
     Wire.endTransmission();
+
+    Wire.beginTransmission( HMC5883 );      //open communication with HMC5883
+    Wire.write( 0x00 );                     //8-average, 15 Hz default, normal measurement
+    Wire.write( 0x70 );                     //continuous measurement mode
+
+    Wire.endTransmission();
+
 }
 
 int* GY_85::readFromCompass()
@@ -123,7 +126,7 @@ int* GY_85::readFromCompass()
     //Read data from each axis, 2 registers per axis
     Wire.requestFrom( HMC5883, 6 );
 
-    int16_t i0, i1, i2;
+    int16_t i0=0, i1=0, i2=0;
     if(6<=Wire.available()){
         i0 = Wire.read()<<8;           //X msb
         i0 |= Wire.read();             //X lsb
@@ -234,6 +237,9 @@ void GY_85::init()
 {
     Wire.begin();
     SetAccelerometer();
-    SetCompass();
     SetGyro();
+
+    compass.init();
+    compass.setCalibrationOffsets(-869.00, -381.00, -34.00);
+    compass.setCalibrationScales(1.07, 0.89, 1.06);
 }
