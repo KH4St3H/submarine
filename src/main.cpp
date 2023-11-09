@@ -76,7 +76,9 @@ void stabilize()
 {
     int offset = 4;
     int powerStep = 10;
+    int maxTime = 5000;
     float *gyroReadings, gx = offset+5, gy = offset+5, gz;
+    int starttime = millis();
     while (gx > offset && gy > offset)
     {
         resetMotors();
@@ -108,6 +110,9 @@ void stabilize()
         }
 
         delay(50);
+        if(millis()-starttime > maxTime){
+            return;  // it freezes so we have a max time
+        }
     }
 }
 
@@ -258,16 +263,15 @@ boolean operateServo()
     log(receivedChars);
 
     bool buttons[13];
-    Serial.print("#debug ");
     for(int i=0; i<13; i++){
         buttons[i] = false;
         buttons[i] += (1<<i) & (int) doc["B"];
-        Serial.print(buttons[i]);
-        Serial.print(" ");
     }
-    Serial.print('\n');
 
     // rotation with L1 and R1
+    if(buttons[12]){
+        stabilize();
+    }
     if ((buttons[4] || buttons[5]))
     {
         if (rotated)
