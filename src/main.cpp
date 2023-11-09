@@ -52,7 +52,7 @@ void setup()
     liftRight1.setServo(srv5);
     liftRight1.attach(23);
 
-    Serial.begin(38400);
+    Serial.begin(29000);
 }
 
 const int numChars = 1024;
@@ -134,6 +134,8 @@ void resetMotors()
 
 void tilt(float x, float y)
 {
+    if(tilted)
+        return;
     tilted = true;
     y = -y; // it comes reversed from right joystick so we flip it
 
@@ -183,92 +185,113 @@ void tilt(float x, float y)
     liftLeft0.setPower((int)tilt_power * sin(theta) * coef);
 }
 
+void log(String str){
+    Serial.println("#debug: "+ str);
+}
+
 boolean operateServo()
 {
     if (!newData)
-    {
+        return false;
+
+    newData = false;
+    log("data = " + (String) receivedChars);
+
+    // deseralize json data to DJD
+    DynamicJsonDocument doc(2048);
+    DeserializationError d = deserializeJson(doc, receivedChars);
+    if(d.code() != DeserializationError::Code::Ok)
+        return false;
+    
+    if(doc["check"] != 15){
         return false;
     }
-        newData = false;
 
-        // deseralize json data to DJD
-        DynamicJsonDocument doc(2048);
-        deserializeJson(doc, receivedChars);
+    double lj_y = doc["left_joystick"][1];
 
-        double lj_y = doc["left_joystick"][1];
-
-        // ascending and descending
-        if (doc["hats"][1] == 1)
-        {
-            liftUp(); // ascend
-        }
-        else if (doc["hats"][1] == -1)
-        {
-            liftDown(); // descend
-        }
-        else if (lifted)
-        {
-            resetMotors(); // reset back to default
-        }
-
-        // rotation with L1 and R1
-        if (doc["buttons"][4] or doc["buttons"][5])
-        {
-            // buttons[4] -> L1, buttons[5] -> R1
-            rotate(doc["buttons"][4]);
+    // ascending and descending
+    if (doc["hats"][1] == 1)
+    {
+        log("lift up");
+        if (lifted)
             return true;
-        }
-        else if (rotated)
-        {
-            resetMotors();
-        }
-
-        float rj_x = doc["right_joystick"][0];
-        float rj_y = doc["right_joystick"][1];
-
-        // tilt with right joystick
-        if ((rj_x > 0.3) || (rj_y > 0.3) || (rj_x < -0.3) || (rj_y < -0.3))
-        {
-            tilt(rj_x, rj_y);
+        liftUp(); // ascend
+    }
+    else if (doc["hats"][1] == -1)
+    {
+        if (lifted)
             return true;
-        } // tilt will be checked below
+        liftDown();
+    } 
+    else if (lifted)
+    {
+        resetMotors(); // reset back to default
+    }
+    log("otherwise");
+    log(receivedChars);
 
-        // tilt with x/o/+/■
-        if (doc["buttons"][0])
-        {
-            tilt(0.5, 1); // it's reversed
+    // rotation with L1 and R1
+    if ((doc["buttons"][4] || doc["buttons"][5]))
+    {
+        if (rotated)
             return true;
-        }
-        else if (doc["buttons"][1])
-        {
-            tilt(1, 0.5);
-            return true;
-        }
-        else if (doc["buttons"][2])
-        {
-            tilt(0.5, -1);
-            return true;
-        }
-        else if (doc["buttons"][3])
-        {
-            tilt(-1, 0.5);
-            return true;
-        }
-        else if (tilted)
-        {
-            resetMotors();
-        }
+        // buttons[4] -> L1, buttons[5] -> R1
+        rotate(doc["buttons"][4]);
+        return true;
+    }
+    else if (rotated)
+    {
+        resetMotors();
+    }
 
-        // junk that might come in handy
-        int escValue = map(lj_y * -100, -100, 100, 1000, 2000);
-        thrustLeft.setPower(escValue);
-        thrustRight.setPower(escValue);
+    float rj_x = doc["right_joystick"][0];
+    float rj_y = doc["right_joystick"][1];
 
-        // DynamicJsonDocument *sensorData;
-        // sensorData = GY85.toJson();
-        // String output;
-        // serializeJson(*sensorData, output);
-        // Serial1.println(output);
+    // tilt with right joystick
+    if ((rj_x > 0.3) || (rj_y > 0.3) || (rj_x < -0.3) || (rj_y < -0.3))
+    {
+        tilt(rj_x, rj_y);
+        return true;
+    } // tilt will be checked below
+
+    // tilt with x/o/+/■
+    if (doc["buttons"][0])
+    {
+        tilt(0.5, 1); // it's reversed
+        return true;
+    }
+    else if (doc["buttons"][1])
+    {
+        tilt(1, 0.5);
+        return true;
+    }
+    else if (doc["buttons"][2])
+    {
+        tilt(0.5, -1);
+        return true;
+    }
+    else if (doc["buttons"][3])
+    {
+        tilt(-1, 0.5);
+        return true;
+    }
+    else if (tilted)
+    {
+        resetMotors();
+    }
+
+    // junk that might come in handy
+    if (abs(lj_y) < 0.1)
+    {
+        lj_y = 0;
+        thrustLeft.setPower(0);
+        thrustRight.setPower(0);
+        return true;
+    }
+    int escValue = map(lj_y * -100, -100, 100, 1000, 2000);
+    thrustLeft.setPower(escValue);
+    thrustRight.setPower(escValue);
+
     return true;
 }
 void loop()

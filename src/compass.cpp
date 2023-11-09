@@ -298,6 +298,5 @@ int Compass::getAzimuth(){
 	heading += _magneticDeclinationDegrees;
 	if(heading<0)
 		heading += 360;
-    Serial.println(heading);
 	return ((int)heading) % 360;
 }
