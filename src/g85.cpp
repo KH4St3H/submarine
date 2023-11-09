@@ -20,11 +20,11 @@ DynamicJsonDocument* GY_85::toJson(){
   float gx = gyro_x(gyroReadings);
   float gy = gyro_y(gyroReadings);
   float gz = gyro_z(gyroReadings);
-  if(gx<1)
+  if(abs(gx)<1)
     gx = 0;
-  if(gy<1)
+  if(abs(gy)<1)
     gy = 0;
-  if(gz<1)
+  if(abs(gz)<1)
     gz = 0;
 
   float gt = temp(gyroReadings);
@@ -33,8 +33,10 @@ DynamicJsonDocument* GY_85::toJson(){
   doc["gyro"][1] = gy;
   doc["gyro"][2] = gz;
 
-  doc["accel"][0] = ax;
-  doc["accel"][1] = ay;
+  int roll = atan2(ay, az) * 180 / PI;
+  int pitch = atan2(-ax, sqrt(ay * ay + az * az)) * 180 / PI;
+  doc["accel"][0] = roll;
+  doc["accel"][1] = pitch;
 
   compass.read();
   doc["compassHeading"] = compass.getAzimuth();
