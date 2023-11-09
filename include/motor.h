@@ -6,12 +6,14 @@
 
 class Motor{
     public:
+        Motor(int pin);
+        void setPower(int n);
+        void attach(int n);
+        void increaseBasePower(int n);
+    private:
         Servo servo;
         int pin;
         int power;
         int base_power = 1500;
-        void setServo(Servo src);
-        void setPower(int n);
-        void attach(int n);
 };
 #endif
