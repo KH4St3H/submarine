@@ -5,14 +5,14 @@
 #include <GY_85.h>
 #include <motor.h>
 
-Motor thrustRight;
-Motor thrustLeft;
+Motor thrustRight = Motor(27);
+Motor thrustLeft = Motor(26);
 
-Motor liftLeft0;
-Motor liftLeft1;
+Motor liftLeft0 = Motor(24);
+Motor liftLeft1 = Motor(22);
 
-Motor liftRight0;
-Motor liftRight1;
+Motor liftRight0 = Motor(25);
+Motor liftRight1 = Motor(23);
 
 Motor motors[] = {thrustRight, thrustLeft, liftLeft0, liftLeft1, liftRight0, liftRight1};
 
@@ -28,30 +28,11 @@ GY_85 GY85;
 
 boolean receiving = false;
 
+void resetMotors();
+
 void setup()
 {
-
     GY85.init();
-
-    Servo srv0, srv1, srv2, srv3, srv4, srv5;
-    thrustRight.setServo(srv0);
-    thrustRight.attach(27);
-
-    thrustLeft.setServo(srv1);
-    thrustLeft.attach(26);
-
-    liftLeft0.setServo(srv2);
-    liftLeft0.attach(24);
-
-    liftLeft1.setServo(srv3);
-    liftLeft1.attach(22);
-
-    liftRight0.setServo(srv4);
-    liftRight0.attach(25);
-
-    liftRight1.setServo(srv5);
-    liftRight1.attach(23);
-
     Serial.begin(29000);
 }
 
@@ -91,6 +72,44 @@ void recvWithEndMarker()
     }
 }
 
+void stabilize()
+{
+    int offset = 4;
+    int powerStep = 10;
+    float *gyroReadings, gx = offset+5, gy = offset+5, gz;
+    while (gx > offset && gy > offset)
+    {
+        resetMotors();
+        gyroReadings = GY85.readGyro();
+        gx = GY85.gyro_x(gyroReadings);
+        gy = GY85.gyro_y(gyroReadings);
+        gz = GY85.gyro_z(gyroReadings);
+        if (abs(gx) < 1)
+            gx = 0;
+        if (abs(gy) < 1)
+            gy = 0;
+        if (abs(gz) < 1)
+            gz = 0;
+        
+        if(gx < -offset){
+            liftLeft0.increaseBasePower(powerStep);
+            liftRight0.increaseBasePower(powerStep);
+            continue;
+        } else if(gx > offset){
+            liftLeft1.increaseBasePower(powerStep);
+            liftRight1.increaseBasePower(powerStep);
+        }
+        if(gy > offset){
+            liftLeft1.increaseBasePower(powerStep);
+            liftLeft0.increaseBasePower(powerStep);
+        } else if(gy < -offset){
+            liftRight0.increaseBasePower(powerStep);
+            liftRight1.increaseBasePower(powerStep);
+        }
+
+        delay(50);
+    }
+}
 
 void rotate(boolean left)
 {
@@ -134,32 +153,38 @@ void resetMotors()
 
 void tilt(float x, float y)
 {
-    if(tilted)
-        return;
     tilted = true;
     y = -y; // it comes reversed from right joystick so we flip it
 
     // tilt to right, left, up and down respectively
     if (x > 0.9)
     {
+        liftLeft0.setPower(0);
+        liftLeft1.setPower(0);
         liftRight0.setPower(tilt_power);
         liftRight1.setPower(tilt_power);
         return;
     }
     else if (x < -0.9)
     {
+        liftRight0.setPower(0);
+        liftRight1.setPower(0);
         liftLeft0.setPower(tilt_power);
         liftLeft1.setPower(tilt_power);
         return;
     }
     else if (y > 0.9)
     {
+        liftLeft1.setPower(0);
+        liftRight1.setPower(0);
         liftLeft0.setPower(tilt_power);
         liftRight0.setPower(tilt_power);
         return;
     }
     else if (y < -0.9)
     {
+        liftLeft1.setPower(0);
+        liftRight1.setPower(0);
         liftLeft0.setPower(-tilt_power);
         liftRight0.setPower(-tilt_power);
         return;
@@ -168,7 +193,7 @@ void tilt(float x, float y)
     float theta;
     if (x > 0.1)
     {
-        theta = atan(y / x) - pi / 2;
+        theta = atan2(y, x) - pi / 4;
     }
     else
     {
@@ -183,6 +208,8 @@ void tilt(float x, float y)
     liftRight0.setPower((int)tilt_power * cos(theta) * coef);
     // calculate sin(theta-pi/2) for left motor
     liftLeft0.setPower((int)tilt_power * sin(theta) * coef);
+    liftLeft1.setPower(0);
+    liftRight1.setPower(0);
 }
 
 void log(String str){
