@@ -3,3 +3,11 @@
 .vscode/c_cpp_properties.json
 .vscode/launch.json
 .vscode/ipch
+__pycache__/
+
+
+# test
+gps.cpp
+MS5837.cpp
+MS5837.h
+jc.py

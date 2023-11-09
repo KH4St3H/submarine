@@ -202,12 +202,12 @@ boolean operateServo()
     DeserializationError d = deserializeJson(doc, receivedChars);
     if(d.code() != DeserializationError::Code::Ok)
         return false;
-    
+
     if(doc["check"] != 15){
         return false;
     }
 
-    double lj_y = doc["left_joystick"][1];
+    double lj_y = doc["lj"][1];
 
     // ascending and descending
     if (doc["hats"][1] == 1)
@@ -230,13 +230,23 @@ boolean operateServo()
     log("otherwise");
     log(receivedChars);
 
+    bool buttons[13];
+    Serial.print("#debug ");
+    for(int i=0; i<13; i++){
+        buttons[i] = false;
+        buttons[i] += (1<<i) & (int) doc["B"];
+        Serial.print(buttons[i]);
+        Serial.print(" ");
+    }
+    Serial.print('\n');
+
     // rotation with L1 and R1
-    if ((doc["buttons"][4] || doc["buttons"][5]))
+    if ((buttons[4] || buttons[5]))
     {
         if (rotated)
             return true;
         // buttons[4] -> L1, buttons[5] -> R1
-        rotate(doc["buttons"][4]);
+        rotate(buttons[4]);
         return true;
     }
     else if (rotated)
@@ -244,8 +254,8 @@ boolean operateServo()
         resetMotors();
     }
 
-    float rj_x = doc["right_joystick"][0];
-    float rj_y = doc["right_joystick"][1];
+    float rj_x = doc["rj"][0];
+    float rj_y = doc["rj"][1];
 
     // tilt with right joystick
     if ((rj_x > 0.3) || (rj_y > 0.3) || (rj_x < -0.3) || (rj_y < -0.3))
@@ -255,22 +265,22 @@ boolean operateServo()
     } // tilt will be checked below
 
     // tilt with x/o/+/■
-    if (doc["buttons"][0])
+    if (buttons[0])
     {
         tilt(0.5, 1); // it's reversed
         return true;
     }
-    else if (doc["buttons"][1])
+    else if (buttons[1])
     {
         tilt(1, 0.5);
         return true;
     }
-    else if (doc["buttons"][2])
+    else if (buttons[2])
     {
         tilt(0.5, -1);
         return true;
     }
-    else if (doc["buttons"][3])
+    else if (buttons[3])
     {
         tilt(-1, 0.5);
         return true;
@@ -280,7 +290,6 @@ boolean operateServo()
         resetMotors();
     }
 
-    // junk that might come in handy
     if (abs(lj_y) < 0.1)
     {
         lj_y = 0;
@@ -288,7 +297,8 @@ boolean operateServo()
         thrustRight.setPower(0);
         return true;
     }
-    int escValue = map(lj_y * -100, -100, 100, 1000, 2000);
+    int escValue = map(lj_y * -100, -100, 100, 1000, 2000); // junk that might come in handy
+    escValue = lj_y * -500;
     thrustLeft.setPower(escValue);
     thrustRight.setPower(escValue);
 

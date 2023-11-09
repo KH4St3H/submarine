@@ -39,11 +39,15 @@ def pretty(i):
     data = controller.get_axis(i)
     return float(f'{data:.3f}')
 
+def pack_buttons():
+    return sum([controller.get_button(i)*1<<i for i in range(controller.get_numbuttons())])
+
+
 def send_loop():
     while event := pygame.event.poll():
         if event.type == pygame.JOYAXISMOTION or event.type == pygame.JOYBUTTONDOWN:
             data = {
-                "buttons": [controller.get_button(i) for i in range(controller.get_numbuttons())],
+                "B": pack_buttons(),
                 "hats": controller.get_hat(0),
                 "left_joystick": (pretty(0), pretty(1)),
                 "right_joystick":(pretty(3), pretty(4)),
