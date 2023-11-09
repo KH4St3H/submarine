@@ -13,7 +13,8 @@ from threading import Thread
 from monitor import Monitor
 
 
-rpi_ip ='192.168.66.38'
+rpi_ip ='192.168.168.100'
+rpi_ip = '192.168.72.38'
 rpi_port = 12345
 
 # udp client setting
@@ -21,6 +22,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 rpi_address = (rpi_ip, rpi_port)
 
 monitor = Monitor()
+
 
 # udp server settings
 #sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
