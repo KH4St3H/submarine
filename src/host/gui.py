@@ -44,20 +44,29 @@ class MonitorFrame(tk.Frame):
         self._create_speed()
         self._create_angle()
     
-    def update_angle(self, x=None, y=None):
-        print(x, y)
-        if x:
+    def update_angle(self, x=-1000, y=-1000):
+        if x > 90:
+            x -= 180
+        if y > 90:
+            y -= 180 
+
+        if x > -180 and x < -90:
+            x += 180
+        if y > -180 and y < -90:
+            y += 180
+
+        if x != -1000:
             self.angle_x.set(int(x))
-        if y:
+        if y != -1000:
             self.angle_y.set(int(y))
 
     def update_speed(self, x=None, y=None, z=None):
-        if x:
-            self._speed_x.set(x)
-        if y:
-            self._speed_y.set(y)
-        if z:
-            self._speed_z.set(z)
+        if x is not None:
+            self._speed_x.set(int(x))
+        if y is not None:
+            self._speed_y.set(int(y))
+        if z is not None:
+            self._speed_z.set(int(z))
 
     def _create_angle(self):
         self.angle_x = tk.IntVar()

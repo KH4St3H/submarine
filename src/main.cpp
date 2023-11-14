@@ -30,7 +30,7 @@ boolean receiving = false;
 
 void resetMotors();
 
-void setup()
+void _setup()
 {
     GY85.init();
     Serial.begin(29000);
@@ -335,7 +335,7 @@ boolean operateServo()
 
     return true;
 }
-void loop()
+void _loop()
 {
     recvWithEndMarker();
     boolean op = operateServo();

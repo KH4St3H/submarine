@@ -13,8 +13,8 @@ from threading import Thread
 from monitor import Monitor
 
 
-rpi_ip ='192.168.168.100'
-rpi_ip = '192.168.72.38'
+rpi_ip ='192.168.1.100'
+# rpi_ip = '192.168.72.38'
 rpi_port = 12345
 
 # udp client setting
