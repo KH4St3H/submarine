@@ -40,7 +40,7 @@ void Compass::calibrate() {
 
 	unsigned long startTime = millis();
 
-	while((millis() - startTime) < 10000) {
+	while((millis() - startTime) < 20000) {
 		read();
 
   		x = getX();
@@ -68,6 +68,19 @@ void Compass::calibrate() {
 			calibrationData[2][1] = z;
 		}
 	}
+	Serial.print(calibrationData[0][0]);
+	Serial.print(" ");
+
+	Serial.print(calibrationData[0][1]);
+	Serial.print(" ");
+	Serial.print(calibrationData[1][0]);
+	Serial.print(" ");
+	Serial.print(calibrationData[1][1]);
+	Serial.print(" ");
+	Serial.print(calibrationData[2][0]);
+	Serial.print(" ");
+	Serial.print(calibrationData[2][1]);
+	Serial.print("\n");
 
 	setCalibration(
 		calibrationData[0][0],
