@@ -113,7 +113,7 @@ try:
                 # print(data)
 
         try:
-            data, addr = sock.recvfrom(1024)  # ﺩﺭیﺎﻔﺗ ﺩﺍﺪﻫ
+            data, addr = sock.recvfrom(1024)  # receive data from host
         except TimeoutError as toe:
             write_read('{"check": 1}\n')
             # write_read(old_data.tojson() + '\n')

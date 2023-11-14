@@ -1,5 +1,5 @@
 """
-  Code to be ran on host machine, it captures 
+    Code to be ran on host machine, it captures
 controller events and sends them to Raspberry PI
 via udp.
 """
@@ -14,7 +14,6 @@ from monitor import Monitor
 
 
 rpi_ip ='192.168.1.100'
-# rpi_ip = '192.168.72.38'
 rpi_port = 12345
 
 # udp client setting
