@@ -18,7 +18,7 @@ Motor motors[] = {thrustRight, thrustLeft, liftLeft0, liftLeft1, liftRight0, lif
 
 float pi = PI;
 
-const int tilt_power = 200;
+const int tilt_power = 140;
 const int base = 1500;
 boolean tilted = false;
 boolean lifted = false;
@@ -28,9 +28,10 @@ GY_85 GY85;
 
 boolean receiving = false;
 
+
 void resetMotors();
 
-void _setup()
+void setup()
 {
     GY85.init();
     Serial.begin(29000);
@@ -116,15 +117,24 @@ void stabilize()
     }
 }
 
-void rotate(boolean left)
+void rotate(boolean left, boolean right)
 {
-    if (left)
+    if (left && right)
     {
         thrustRight.setPower(tilt_power);
-    }
-    else
-    {
         thrustLeft.setPower(tilt_power);
+    } else if(left){
+        thrustRight.setPower(tilt_power);
+        thrustLeft.setPower(-tilt_power);
+    } else if(right)
+    {
+        thrustRight.setPower(-tilt_power);
+        thrustLeft.setPower(tilt_power);
+    }else{
+        thrustLeft.setPower(0);
+        thrustRight.setPower(0);
+        rotated = false;
+        return;
     }
     rotated = true;
 }
@@ -166,32 +176,32 @@ void tilt(float x, float y)
     {
         liftLeft0.setPower(0);
         liftLeft1.setPower(0);
-        liftRight0.setPower(tilt_power);
-        liftRight1.setPower(tilt_power);
+        liftRight0.setPower(-tilt_power);
+        liftRight1.setPower(-tilt_power);
         return;
     }
     else if (x < -0.9)
     {
         liftRight0.setPower(0);
         liftRight1.setPower(0);
-        liftLeft0.setPower(tilt_power);
-        liftLeft1.setPower(tilt_power);
+        liftLeft0.setPower(-tilt_power);
+        liftLeft1.setPower(-tilt_power);
         return;
     }
     else if (y > 0.9)
     {
         liftLeft1.setPower(0);
         liftRight1.setPower(0);
-        liftLeft0.setPower(tilt_power);
-        liftRight0.setPower(tilt_power);
+        liftLeft0.setPower(-tilt_power);
+        liftRight0.setPower(-tilt_power);
         return;
     }
     else if (y < -0.9)
     {
         liftLeft1.setPower(0);
         liftRight1.setPower(0);
-        liftLeft0.setPower(-tilt_power);
-        liftRight0.setPower(-tilt_power);
+        liftLeft0.setPower(tilt_power);
+        liftRight0.setPower(tilt_power);
         return;
     }
 
@@ -210,15 +220,30 @@ void tilt(float x, float y)
     coef = max(coef, 1);                      // safety measure
 
     // calculate cos(theta-pi/2) for right motor
-    liftRight0.setPower((int)tilt_power * cos(theta) * coef);
+    liftRight0.setPower((int)-tilt_power * cos(theta) * coef);
     // calculate sin(theta-pi/2) for left motor
-    liftLeft0.setPower((int)tilt_power * sin(theta) * coef);
+    liftLeft0.setPower((int)-tilt_power * sin(theta) * coef);
     liftLeft1.setPower(0);
     liftRight1.setPower(0);
 }
 
 void log(String str){
     Serial.println("#debug: "+ str);
+}
+
+bool thrust(int val){
+    if (abs(val) < 0.1)
+    {
+        thrustLeft.setPower(0);
+        thrustRight.setPower(0);
+    } else{
+        int escValue = map(val * -100, -100, 100, 1000, 2000); // junk that might come in handy
+        escValue = val * -500;
+        thrustLeft.setPower(escValue);
+        thrustRight.setPower(escValue);
+        return true;
+    }
+    return false;
 }
 
 boolean operateServo()
@@ -272,18 +297,20 @@ boolean operateServo()
     if(buttons[12]){
         stabilize();
     }
-    if ((buttons[4] || buttons[5]))
-    {
-        if (rotated)
-            return true;
-        // buttons[4] -> L1, buttons[5] -> R1
-        rotate(buttons[4]);
-        return true;
-    }
-    else if (rotated)
-    {
-        resetMotors();
-    }
+    // if ((buttons[4] || buttons[5] || rotated)){
+    // }
+    // if ((buttons[4] || buttons[5]))
+    // {
+    //     if (rotated)
+    //         return true;
+    //     // buttons[4] -> L1, buttons[5] -> R1
+    //     rotate(buttons[4], buttons[5]);
+    //     return true;
+    // }
+    // else if (rotated)
+    // {
+    //     resetMotors();
+    // }
 
     float rj_x = doc["rj"][0];
     float rj_y = doc["rj"][1];
@@ -321,27 +348,21 @@ boolean operateServo()
         resetMotors();
     }
 
-    if (abs(lj_y) < 0.1)
-    {
-        lj_y = 0;
-        thrustLeft.setPower(0);
-        thrustRight.setPower(0);
+    if(thrust(lj_y)){
         return true;
     }
-    int escValue = map(lj_y * -100, -100, 100, 1000, 2000); // junk that might come in handy
-    escValue = lj_y * -500;
-    thrustLeft.setPower(escValue);
-    thrustRight.setPower(escValue);
+    rotate(buttons[4], buttons[5]);
 
     return true;
 }
-void _loop()
+void loop()
 {
     recvWithEndMarker();
     boolean op = operateServo();
     delay(50);
     if (!receiving)
     {
+        GY85.updateGPS();
         DynamicJsonDocument *sensorData;
         sensorData = GY85.toJson();
         String output;
