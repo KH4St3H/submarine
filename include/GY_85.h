@@ -30,6 +30,11 @@ public:
     int*   readFromAccelerometer();
     int*   readFromCompass();
     float* readGyro();
+    float getCompassDir();
+    double lat();
+    double lng();
+    void updateGPS();
+    bool locationAvailable();
     DynamicJsonDocument* toJson();
 
     

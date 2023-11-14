@@ -2,8 +2,10 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 #include<compass.h>
+#include<TinyGPS++.h>
 
 Compass compass;
+TinyGPSPlus gps;
 
 
 DynamicJsonDocument doc(1024);
@@ -41,10 +43,40 @@ DynamicJsonDocument* GY_85::toJson(){
   compass.read();
   doc["compassHeading"] = compass.getAzimuth();
 
+  if(gps.location.isValid()){
+    doc["lat"] = lat();
+    doc["lng"] = lng();
+  }else{
+    doc["lat"] = 0;
+    doc["lng"] = 0;
+  }
+
   doc["temperature"] = gt;
 
   return &doc;
 
+}
+
+double GY_85::lat(){
+    return gps.location.lat();
+}
+
+double GY_85::lng(){
+    return gps.location.lng();
+}
+
+float GY_85::getCompassDir(){
+    compass.read();
+    return compass.getAzimuth();
+}
+
+void GY_85::updateGPS(){
+    if(Serial1.available())
+        gps.encode(Serial1.read());
+}
+
+bool GY_85::locationAvailable(){
+    return gps.location.isValid();
 }
 
 void GY_85::SetAccelerometer()
@@ -241,7 +273,9 @@ void GY_85::init()
     SetAccelerometer();
     SetGyro();
 
+    Serial1.begin(9600); // gps baud;
+
     compass.init();
-    compass.setCalibrationOffsets(-869.00, -381.00, -34.00);
-    compass.setCalibrationScales(1.07, 0.89, 1.06);
+    // compass.calibrate();
+    compass.setCalibration(-1487, 1380, -816, 2142, -1362, 1258);
 }
