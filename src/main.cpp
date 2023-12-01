@@ -430,12 +430,12 @@ void loop()
     delay(50);
     if (!receiving)
     {
-        // GY85.updateGPS();
-        // DynamicJsonDocument *sensorData;
-        // sensorData = GY85.toJson();
-        // String output;
-        // serializeJson(*sensorData, output);
-        // Serial.println(output);
+        GY85.updateGPS();
+        DynamicJsonDocument *sensorData;
+        sensorData = GY85.toJson();
+        String output;
+        serializeJson(*sensorData, output);
+        Serial.println(output);
         delay(100);
     }
 }
