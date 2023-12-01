@@ -68,6 +68,7 @@ void Compass::calibrate() {
 			calibrationData[2][1] = z;
 		}
 	}
+	Serial.print("#debug ");
 	Serial.print(calibrationData[0][0]);
 	Serial.print(" ");
 
