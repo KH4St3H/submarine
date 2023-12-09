@@ -34,7 +34,7 @@ void resetMotors()
 void tilt(float x, float y)
 {
     // joystick correction
-    if(abs(x)< 0.1 && abs(y) < 0.1){
+    if(abs(x)< 0.2 && abs(y) < 0.2){
         tilting = false;
         return;
     }
@@ -42,23 +42,7 @@ void tilt(float x, float y)
     y = -y; // right joystick y axis is flipped
 
     // tilt to right, left, up and down respectively
-    if (x > 0.9)
-    {
-        liftLeft0.setPower(0);
-        liftLeft1.setPower(0);
-        liftRight0.setPower(-tiltPower);
-        liftRight1.setPower(-tiltPower);
-        return;
-    }
-    else if (x < -0.9)
-    {
-        liftRight0.setPower(0);
-        liftRight1.setPower(0);
-        liftLeft0.setPower(-tiltPower);
-        liftLeft1.setPower(-tiltPower);
-        return;
-    }
-    else if (y > 0.9)
+    if (y > 0.9)
     {
         liftLeft1.setPower(0);
         liftRight1.setPower(0);

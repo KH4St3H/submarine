@@ -276,6 +276,5 @@ void GY_85::init()
     Serial1.begin(9600); // gps baud;
 
     compass.init();
-    // compass.calibrate();
     compass.setCalibration(-1487, 1380, -816, 2142, -1362, 1258);
 }

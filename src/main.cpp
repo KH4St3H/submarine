@@ -30,11 +30,10 @@ bool operateServo()
     DynamicJsonDocument doc(2048);
     DeserializationError d = deserializeJson(doc, receivedChars);
     if(d.code() != DeserializationError::Code::Ok)
-        return false;
+        return false;  // could not decode json
 
-    if(doc["check"] != 15){
+    if(doc["check"] != 15)
         return false;
-    }
 
     double lj_y = doc["lj"][1];
 
@@ -54,9 +53,8 @@ bool operateServo()
         buttons[i] += (1<<i) & (int) doc["B"];
     }
 
-    if(buttons[8]){
+    if(buttons[8])
         blinker();
-    }
 
     if(buttons[9])
         flipLED();
@@ -65,28 +63,15 @@ bool operateServo()
     float rj_x = doc["rj"][0];
     float rj_y = doc["rj"][1];
 
-    // tilt with right joystick
-    if ((rj_x > 0.3) || (rj_y > 0.3) || (rj_x < -0.3) || (rj_y < -0.3))
-    {
-        tilt(rj_x, rj_y);
-        return true;
-    } // tilt will be checked below
-
-    // tilt with x/o/+/■
+    // up and down tilt with x/△
     if (buttons[0])
-    {
-        tilt(0.5, 1); // it's reversed
-        return true;
-    }
+        rj_x = 0.5, rj_y = 1;
     else if (buttons[2])
-    {
-        tilt(0.5, -1);
-        return true;
-    }
+        rj_x = 0.5, rj_y = -1;
 
-    if(thrust(lj_y)){
-        return true;
-    }
+    tilt(rj_x, rj_y);
+
+    thrust(lj_y);
     rotate(buttons[4], buttons[5]);
 
     return true;
@@ -96,7 +81,7 @@ void loop()
 {
     recvWithEndMarker();
     operateServo();
-    if(!blink)
+    if(blink)
         blinkLED();
     // delay(50);
     if (!receiving)

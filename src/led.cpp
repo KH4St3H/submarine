@@ -3,7 +3,7 @@
 
 uint ledUpdated = millis();
 bool ledState = false;
-bool blink = false;
+bool blink = true;
 
 void flipLED(){
     if(ledState){
