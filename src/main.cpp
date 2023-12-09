@@ -5,16 +5,14 @@
 #include "motor.h"
 #include "movements.h"
 
-GY_85 GY85;
+#include "utils.h"
 
-bool receiving = false;
+GY_85 GY85;
 
 bool ledState = false;
 bool blink = false;
 uint ledUpdated = millis();
 
-
-void resetMotors();
 
 void setup()
 {
@@ -25,42 +23,6 @@ void setup()
     digitalWrite(13, LOW);
 }
 
-const int numChars = 1024;
-char receivedChars[numChars]; // an array to store the received data
-
-bool newData = false;
-
-
-void recvWithEndMarker()
-{
-    static byte ndx = 0;
-    char endMarker = '\n';
-    char rc;
-
-    while (Serial.available() > 0 && newData == false)
-    {
-        rc = Serial.read();
-
-        if (rc != endMarker)
-        {
-            receiving = true;
-            receivedChars[ndx] = rc;
-            ndx++;
-            ndx = min(numChars-1, ndx);
-        }
-        else
-        {
-            receiving = false;
-            receivedChars[ndx] = '\0'; // terminate the string
-            ndx = 0;
-            newData = true;
-        }
-    }
-}
-
-void log(String str){
-    Serial.println("#debug: "+ str);
-}
 
 void flipLED(){
     if(ledState){
@@ -168,6 +130,7 @@ bool operateServo()
 
     return true;
 }
+
 void loop()
 {
     recvWithEndMarker();
