@@ -1,7 +1,7 @@
+#pragma once
 #ifndef MOTOR_H
 #define MOTOR_H
-
-#pragma once
+#include<motor.h>
 #include <Servo.h>
 
 class Motor{
