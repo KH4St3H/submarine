@@ -1,18 +1,13 @@
 #include <Arduino.h>
 #include <ArduinoJson.h>
 
-#include <GY_85.h>
+#include "GY_85.h"
 #include "motor.h"
 #include "movements.h"
-
+#include "led.h"
 #include "utils.h"
 
 GY_85 GY85;
-
-bool ledState = false;
-bool blink = false;
-uint ledUpdated = millis();
-
 
 void setup()
 {
@@ -21,40 +16,6 @@ void setup()
 
     pinMode(13, OUTPUT);
     digitalWrite(13, LOW);
-}
-
-
-void flipLED(){
-    if(ledState){
-        ledState = false;
-        digitalWrite(13, LOW);
-    }else{
-        ledState = true;
-        digitalWrite(13, HIGH);
-    }
-}
-
-void blinker(){
-    if(blink){
-        blink = false;
-    }
-    else{
-        blink = true;
-    }
-}
-
-void blinkLED(){
-    if(millis() - ledUpdated < 200)
-        return;
-    ledUpdated = millis();
-    
-    if(ledState){
-        ledState = false;
-        digitalWrite(13, LOW);
-    }else{
-        ledState = true;
-        digitalWrite(13, HIGH);
-    }
 }
 
 bool operateServo()
@@ -135,9 +96,8 @@ void loop()
 {
     recvWithEndMarker();
     operateServo();
-    if(!blink){
+    if(!blink)
         blinkLED();
-    }
     // delay(50);
     if (!receiving)
     {
