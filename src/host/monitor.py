@@ -23,6 +23,8 @@ class Monitor:
         except Exception as e:
             print(f'error: {e}')
             return False
+        if 'gyro' not in data:
+            return False
         print(js)
 
         if 'gyro' in data:

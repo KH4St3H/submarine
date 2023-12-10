@@ -14,6 +14,7 @@ from monitor import Monitor
 
 
 rpi_ip ='192.168.1.100'
+# rpi_ip = '192.168.179.38'
 rpi_port = 12345
 
 # udp client setting
