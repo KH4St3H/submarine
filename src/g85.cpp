@@ -43,13 +43,13 @@ DynamicJsonDocument* GY_85::toJson(){
   compass.read();
   doc["compassHeading"] = compass.getAzimuth();
 
-  if(gps.location.isValid()){
-    doc["lat"] = lat();
-    doc["lng"] = lng();
-  }else{
-    doc["lat"] = 0;
-    doc["lng"] = 0;
-  }
+//   if(gps.location.isValid()){
+//     doc["lat"] = lat();
+//     doc["lng"] = lng();
+//   }else{
+//     doc["lat"] = 0;
+//     doc["lng"] = 0;
+//   }
 
   doc["temperature"] = gt;
 
@@ -71,8 +71,8 @@ float GY_85::getCompassDir(){
 }
 
 void GY_85::updateGPS(){
-    if(Serial1.available())
-        gps.encode(Serial1.read());
+    // if(Serial1.available())
+        // gps.encode(Serial1.read());
 }
 
 bool GY_85::locationAvailable(){
@@ -272,8 +272,6 @@ void GY_85::init()
     Wire.begin();
     SetAccelerometer();
     SetGyro();
-
-    Serial1.begin(9600); // gps baud;
 
     compass.init();
     compass.setCalibration(-1487, 1380, -816, 2142, -1362, 1258);
