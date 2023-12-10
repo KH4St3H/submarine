@@ -7,6 +7,8 @@
 #include "led.h"
 #include "utils.h"
 
+#include "auv.h"
+
 GY_85 GY85;
 
 void setup()
@@ -34,6 +36,11 @@ bool operateServo()
 
     if(doc["check"] != 15)
         return false;
+    
+    if(doc["forward"]){
+        log("here");
+        forward((int) doc["forward"]);
+    }
 
     double lj_y = doc["lj"][1];
 
@@ -70,7 +77,6 @@ bool operateServo()
         rj_x = 0.5, rj_y = -1;
 
     tilt(rj_x, rj_y);
-
     thrust(lj_y);
     rotate(buttons[4], buttons[5]);
 
@@ -83,7 +89,7 @@ void loop()
     operateServo();
     if(blink)
         blinkLED();
-    // delay(50);
+    delay(50);
     if (!receiving)
     {
         DynamicJsonDocument *sensorData;

@@ -12,7 +12,7 @@ Motor liftLeft1 = Motor(22, true, (4/3));
 Motor liftRight0 = Motor(25);
 Motor liftRight1 = Motor(23, false, (4/3));
 
-bool rotating = false, tilting=false, lifting=false;
+bool rotating = false, tilting=false, lifting=false, thrusting=false;
 
 
 // TODO: add stablization functionality
@@ -35,6 +35,12 @@ void tilt(float x, float y)
 {
     // joystick correction
     if(abs(x)< 0.2 && abs(y) < 0.2){
+        if(tilting){
+            liftLeft0.setPower(0);
+            liftLeft1.setPower(0);
+            liftRight0.setPower(0);
+            liftRight1.setPower(0);
+        }
         tilting = false;
         return;
     }
@@ -98,6 +104,10 @@ void lift(Direction dir){
 // rotating in yaw axis
 void rotate(bool left, bool right)
 {
+    if (left || right){
+        rotating = true; // indicate we are rotating
+    }
+
     if (left && right) // if R1 and L1 activate both thrusters
     {
         thrustRight.setPower(rotateSpeed);
@@ -110,13 +120,12 @@ void rotate(bool left, bool right)
     {
         thrustRight.setPower(-rotateSpeed);
         thrustLeft.setPower(rotateSpeed);
-    }else{ // cancel rotation if none  TODO: should not effect other functionalities
+    }else if(rotating){ // cancel rotation if none  TODO: should not effect other functionalities
         thrustLeft.setPower(0);
         thrustRight.setPower(0);
         rotating = false;
         return;
     }
-    rotating = true; // indicate we are rotating
 }
 
 // activates both thursters with the same power
@@ -127,10 +136,14 @@ bool thrust(float val)
     if (abs(val) < 0.1)
     {
         // turning motors off
-        thrustLeft.setPower(0);
-        thrustRight.setPower(0);
+        if(thrusting){
+            thrustLeft.setPower(0);
+            thrustRight.setPower(0);
+            thrusting = false;
+        }
         return false;
     }
+    thrusting = true;
     // we multiply it by 500 to get a power between -500 and 500
     // and * -1 beacuse left joystick is reversed
     int escValue = val * -500; // -500 < val < 500

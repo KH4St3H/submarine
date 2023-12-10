@@ -308,9 +308,13 @@ int Compass::_get(int i){
 **/
 int Compass::getAzimuth(){
 	float heading = atan2( getY(), getX() ) * 180.0 / PI;
+	heading *= -1;
+	heading += 140;
 
 	heading += _magneticDeclinationDegrees;
-	if(heading<0)
+	while(heading<0)
 		heading += 360;
+
+	
 	return ((int)heading) % 360;
 }
